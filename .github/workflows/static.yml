@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell Mart - Product Order Form</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 70%;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            font-size: 32px;
+            color: #e74c3c;
+            background: -webkit-linear-gradient(45deg, #3498db, #e74c3c, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        label {
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 5px;
+            display: block;
+        }
+        input, select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            width: 100%;
+            display: block;
+        }
+        .btn-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .lang-switch {
+            float: right;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 24px;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .row input, .row select {
+            flex: 1;
+        }
+        .buy-more {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+            color: #3498db;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 2px solid;
+            width: 40px;
+            height: 40px;
+            margin: 10px auto;
+        }
+        .buy-more img {
+            width: 100%;
+            height: 100%;
+        }
+        .product-item {
+            margin-bottom: 10px;
+        }
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        .invoice-table th, .invoice-table td {
+            border: 1px solid #34495e;
+            padding: 5px;
+            text-align: left;
+        }
+        .invoice-table th {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .invoice-section {
+            margin-top: 20px;
+        }
+        .invoice-number {
+            font-weight: bold;
+            margin-top: 10px;
+            text-align: right;
+        }
+        .submit-section {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .submit-section button {
+            margin: 10px;
+        }
+        .submit-section .close {
+            background-color: #e74c3c;
+        }
+    </style>
+    <script>
+        let currentLanguage = "en";
+        
+        function toggleLanguage() {
+            if (currentLanguage === "en") {
+                document.querySelectorAll('label').forEach(label => {
+                    if (label.innerText === 'Customer Name') label.innerText = 'নাম';
+                    if (label.innerText === 'Mobile Number') label.innerText = 'মোবাইল নম্বর';
+                    if (label.innerText === 'Address') label.innerText = 'ঠিকানা';
+                    if (label.innerText === 'Division') label.innerText = 'বিভাগ';
+                });
+                currentLanguage = "bn";
+            } else {
+                document.querySelectorAll('label').forEach(label => {
+                    if (label.innerText === 'নাম') label.innerText = 'Customer Name';
+                    if (label.innerText === 'মোবাইল নম্বর') label.innerText = 'Mobile Number';
+                    if (label.innerText === 'ঠিকানা') label.innerText = 'Address';
+                    if (label.innerText === 'বিভাগ') label.innerText = 'Division';
+                });
+                currentLanguage = "en";
+            }
+        }
+
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(function(sec) {
+                sec.classList.remove('active');
+            });
+            document.getElementById(section).classList.add('active');
+        }
+
+        function addProductRow() {
+            let productContainer = document.getElementById('productContainer');
+            let productRow = document.createElement('div');
+            productRow.className = 'row product-item';
+
+            productRow.innerHTML = `
+                <input type="text" placeholder="Product Name" />
+                <input type="text" placeholder="Color" />
+                <input type="text" placeholder="Size" />
+                <input type="number" placeholder="Qty" min="1" />
+            `;
+
+            productContainer.appendChild(productRow);
+        }
+
+        function generateInvoiceNumber() {
+            let mobileNumber = document.querySelector('input[name="mobile"]').value;
+            let name = document.getElementById('name').value;
+            if (mobileNumber.length >= 6) {
+                let date = new Date();
+                let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                let month = months[date.getMonth()];
+                let day = date.getDate();
+                let year = date.getFullYear().toString().slice(-2); // Last 2 digits of the year
+                let randomNum = Math.floor(100000 + Math.random() * 900000); // 6-digit random number
+                let invoiceNumber = `${month}-${day}-${year}-${name}-${randomNum}`;
+                document.getElementById('invoiceNumber').innerText = `Invoice No: ${invoiceNumber}`;
+            }
+        }
+
+        function submitForm() {
+            updateInvoice();
+            showSection('submitSection');
+        }
+
+        function updateInvoice() {
+            let productRows = document.querySelectorAll('.product-item');
+            let invoiceBody = document.querySelector('.invoice-table tbody');
+            invoiceBody.innerHTML = ''; // Clear previous entries
+
+            productRows.forEach(row => {
+                let productName = row.querySelector('input[placeholder="Product Name"]').value || "N/A";
+                let color = row.querySelector('input[placeholder="Color"]').value || "N/A";
+                let size = row.querySelector('input[placeholder="Size"]').value || "N/A";
+                let qty = row.querySelector('input[placeholder="Qty"]').value || "N/A";
+
+                let newRow = `
+                    <tr>
+                        <td>${productName}</td>
+                        <td>${color}</td>
+                        <td>${size}</td>
+                        <td>${qty}</td>
+                    </tr>
+                `;
+                invoiceBody.insertAdjacentHTML('beforeend', newRow);
+            });
+        }
+
+        function downloadPDF() {
+            // Get the content of the invoice
+            let element = document.querySelector('.submit-section');
+            
+            // Configure the PDF generation options
+            let opt = {
+                margin:       0.5,
+                filename:     'Order_Summary.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Generate and download the PDF
+            html2pdf().from(element).set(opt).save();
+        }
+
+        function resetForm() {
+            // Reset form inputs
+            document.querySelectorAll('input, select').forEach(input => input.value = '');
+            // Remove all product rows except one
+            let productContainer = document.getElementById('productContainer');
+            productContainer.innerHTML = `
+                <div class="row product-item">
+                    <input type="text" placeholder="Product Name" />
+                    <input type="text" placeholder="Color" />
+                    <input type="text" placeholder="Size" />
+                    <input type="number" placeholder="Qty" min="1" />
+                </div>
+            `;
+            // Show the personal info section
+            showSection('personalInfo');
+        }
+
+        window.onload = function() {
+            document.querySelector('input[name="mobile"]').addEventListener('input', generateInvoiceNumber);
+            document.getElementById('buyMore').addEventListener('click', addProductRow);
+        };
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <div class="lang-switch" onclick="toggleLanguage()">
+        <img src="https://img.icons8.com/color/48/000000/language.png" />
+    </div>
+    
+    <h1>Sell Mart</h1>
+    <h1>Product Order Form</h1>
+
+    <!-- Section 1: Personal Information -->
+    <div id="personalInfo" class="section active">
+        <label for="name">Customer Name</label>
+        <input type="text" id="name" placeholder="Enter your name" required />
+
+        <label for="mobile">Mobile Number</label>
+        <input type="text" id="mobile" name="mobile" placeholder="Enter your mobile number" required />
+
+        <label for="address">Address</label>
+        <input type="text" id="address" placeholder="Enter your address" required />
+
+        <label for="division">Division</label>
+        <select id="division">
+            <option value="" disabled selected>Select Division</option>
+            <option value="Dhaka">Dhaka</option>
+            <option value="Chittagong">Chittagong</option>
+            <option value="Khulna">Khulna</option>
+            <option value="Rajshahi">Rajshahi</option>
+            <option value="Sylhet">Sylhet</option>
+            <option value="Barisal">Barisal</option>
+            <option value="Rangpur">Rangpur</option>
+            <option value="Mymensingh">Mymensingh</option>
+        </select>
+
+        <div class="btn-container">
+            <button onclick="showSection('productSelection')">Next</button>
+        </div>
+    </div>
+
+    <!-- Section 2: Product Selection -->
+    <div id="productSelection" class="section">
+        <h2>Select Products</h2>
+
+        <div id="productContainer">
+            <div class="row product-item">
+                <input type="text" placeholder="Product Name" />
+                <input type="text" placeholder="Color" />
+                <input type="text" placeholder="Size" />
+                <input type="number" placeholder="Qty" min="1" />
+            </div>
+        </div>
+
+        <div id="buyMore" class="buy-more">
+            <img src="https://img.icons8.com/windows/32/3498db/add-shopping-cart.png" />
+        </div>
+
+        <div class="btn-container">
+            <button onclick="showSection('personalInfo')">Previous</button>
+            <button onclick="submitForm()">Submit</button>
+        </div>
+    </div>
+
+    <!-- Section 3: Invoice Section -->
+    <div id="submitSection" class="section submit-section">
+        <h2>Order Summary</h2>
+<div class="success-message" id="successMessage" style="display: Successful!; color: green; font-weight: bold;">
+        Order Successful!
+    </div>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Qty</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="invoice-number" id="invoiceNumber"></div>
+
+        <div class="btn-container">
+            <button onclick="downloadPDF()">Download PDF</button>
+            <button class="close" onclick="resetForm()">Close Page</button>
+            <button onclick="resetForm()">Order Again</button>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.0/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+    function downloadPDF() {
+        // Hide buttons and other elements not needed in PDF
+        let btns = document.querySelectorAll('button, .buy-more');
+        btns.forEach(btn => btn.style.display = 'none');
+
+        // Get the content of the invoice
+        let element = document.querySelector('.submit-section');
+
+        // Invoice Number for Bar Code
+        let invoiceNumber = document.getElementById('invoiceNumber').innerText;
+
+        // Create Bar Code and QR Code
+        let barCodeCanvas = document.createElement('canvas');
+        JsBarcode(barCodeCanvas, invoiceNumber, {
+            format: "CODE128",
+            displayValue: true,
+            fontSize: 14
+        });
+
+        let qrCodeCanvas = document.createElement('canvas');
+        let qr = new QRious({
+            element: qrCodeCanvas,
+            value: "https://www.facebook.com/profile.php?id=100063185652227",
+            size: 120
+        });
+
+        // Configure the PDF generation options
+        let opt = {
+            margin: 0.5,
+            filename: 'Order_Summary.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+            pagebreak: { mode: 'avoid-all' }
+        };
+
+        // New professional styling for Sell Mart and message
+        let pdfContent = `
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="font-size: 36px; color: #2c3e50; font-weight: bold; letter-spacing: 1px;">Sell Mart</h1>
+                <p style="font-size: 18px; color: #7f8c8d;">Your trusted online shopping destination</p>
+            </div>
+
+            <h3 style="text-align:center; color: #34495e; font-size: 16px;">Thank you for your purchase! Your product will be delivered within 2 to 3 business days.</h3>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <p><strong>Official Contact:</strong> 01622335730</p>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; border: 1px solid #bdc3c7; border-radius: 8px;">
+                <p><strong>Customer Name:</strong> ${document.getElementById('name').value}</p>
+                <p><strong>Phone Number:</strong> ${document.getElementById('mobile').value}</p>
+                <p><strong>Address:</strong> ${document.getElementById('address').value}, ${document.getElementById('division').value}</p>
+                <p><strong>Invoice Number:</strong> ${invoiceNumber}</p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <p><strong>Invoice Bar Code:</strong></p>
+                <img src="${barCodeCanvas.toDataURL()}" alt="Bar Code">
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <p><strong>Scan the QR Code to visit our Facebook Page:</strong></p>
+                <img src="${qrCodeCanvas.toDataURL()}" alt="QR Code">
+            </div>
+
+            <div style="margin-top: 20px;">
+                ${element.innerHTML}
+            </div>
+        `;
+
+        // Create a temporary container to hold the PDF content
+        let tempContainer = document.createElement('div');
+        tempContainer.innerHTML = pdfContent;
+        document.body.appendChild(tempContainer);
+
+        // Generate and download the PDF
+        html2pdf().from(tempContainer).set(opt).save().then(() => {
+            document.body.removeChild(tempContainer);  // Remove temp content
+            btns.forEach(btn => btn.style.display = 'block');  // Show buttons again
+        });
+    }
+</script>
+
+
+</body>
+</html>
